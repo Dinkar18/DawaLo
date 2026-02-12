@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MedNutriTrack</string>
+
+    <!-- Common -->
+    <string name="save">सेव करीं</string>
+    <string name="cancel">रद्द करीं</string>
+    <string name="delete">मिटाईं</string>
+    <string name="edit">बदलीं</string>
+
+    <!-- Medicine -->
+    <string name="medicine_reminder">दवाई खाए के समय हो गइल बा</string>
+    <string name="medicine_name">दवाई के नाम</string>
+    <string name="dosage">मात्रा</string>
+    <string name="add_medicine">दवाई जोड़ीं</string>
+    <string name="medicine_list">हमार दवाई सब</string>
+    <string name="mark_taken">खा लिहलीं</string>
+    <string name="skip">छोड़ दीं</string>
+
+    <!-- Nutrition -->
+    <string name="protein_low">राउर प्रोटीन कम बा</string>
+    <string name="protein_target">प्रोटीन लक्ष्य</string>
+    <string name="protein_consumed">खइलीं</string>
+    <string name="add_food">खाना जोड़ीं</string>
+    <string name="today_protein">आज के प्रोटीन</string>
+    <string name="suggestions">सुझाव</string>
+
+    <!-- Profile -->
+    <string name="weight">वजन (किलो)</string>
+    <string name="height">लंबाई (सेमी)</string>
+    <string name="age">उमिर</string>
+</resources>

@@ -1,0 +1,56 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/white"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvMedicineName"
+        android:text="Paracetamol - 1 pill"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"/>
+
+    <TextView
+        android:id="@+id/tvCountdown"
+        android:text="Time remaining: 5 min"
+        android:textSize="24sp"
+        android:layout_marginBottom="32dp"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnTaken"
+        android:text="TAKEN"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:backgroundTint="@color/accent"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnSkip"
+        android:text="SKIP"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:backgroundTint="@color/grey"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnRemindLater"
+        android:text="REMIND LATER"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:backgroundTint="@color/yellow"
+        android:textColor="@color/black"
+        android:textSize="22sp"/>
+
+</LinearLayout>

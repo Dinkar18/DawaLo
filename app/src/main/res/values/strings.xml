@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">MedNutriTrack</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+
+    <!-- Medicine -->
+    <string name="medicine_reminder">दवाई लेने का समय हो गया है</string>
+    <string name="medicine_name">Medicine Name</string>
+    <string name="dosage">Dosage</string>
+    <string name="add_medicine">Add Medicine</string>
+    <string name="medicine_list">My Medicines</string>
+    <string name="mark_taken">Mark as Taken</string>
+    <string name="skip">Skip</string>
+
+    <!-- Nutrition -->
+    <string name="protein_low">Your protein intake is low</string>
+    <string name="protein_target">Protein Target</string>
+    <string name="protein_consumed">Consumed</string>
+    <string name="add_food">Add Food</string>
+    <string name="today_protein">Today\'s Protein</string>
+    <string name="suggestions">Suggestions</string>
+
+    <!-- Profile -->
+    <string name="weight">Weight (kg)</string>
+    <string name="height">Height (cm)</string>
+    <string name="age">Age</string>
+    <string name="gender">Gender</string>
+    <string name="diet_type">Diet Type</string>
+    <string name="activity_level">Activity Level</string>
+    <string name="language">Language</string>
+    <string name="goal">Goal</string>
+    <string name="goal_normal">Normal</string>
+    <string name="goal_muscle">Muscle Gain</string>
+    <string name="goal_weight_loss">Weight Loss</string>
+    <string name="goal_weight_gain">Weight Gain</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard">Dashboard</string>
+    <string name="medicine">Medicine</string>
+    <string name="nutrition">Nutrition</string>
+    <string name="analytics">Analytics</string>
+</resources>
