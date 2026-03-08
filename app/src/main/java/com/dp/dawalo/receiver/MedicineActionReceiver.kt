@@ -7,8 +7,9 @@ import android.content.Intent
 import android.widget.Toast
 import com.dp.dawalo.MedNutriTrackApp
 import com.dp.dawalo.data.local.entity.MedicineLog
-import com.dp.dawalo.data.local.entity.Status
+import com.dp.dawalo.data.local.entity.MedicineStatus
 import com.dp.dawalo.service.VoiceAlertService
+import com.dp.dawalo.utils.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,8 +21,8 @@ class MedicineActionReceiver : BroadcastReceiver() {
         val action = intent.action
         
         when (action) {
-            "ACTION_TAKEN" -> logMedicine(context, medicineId, Status.TAKEN)
-            "ACTION_SKIP" -> logMedicine(context, medicineId, Status.SKIPPED)
+            "ACTION_TAKEN" -> logMedicine(context, medicineId, MedicineStatus.TAKEN)
+            "ACTION_SKIP" -> logMedicine(context, medicineId, MedicineStatus.SKIPPED)
         }
         
         // Stop voice alert
@@ -35,20 +36,22 @@ class MedicineActionReceiver : BroadcastReceiver() {
         notificationManager.cancel(medicineId.toInt())
     }
     
-    private fun logMedicine(context: Context, medicineId: Long, status: Status) {
+    private fun logMedicine(context: Context, medicineId: Long, status: MedicineStatus) {
         CoroutineScope(Dispatchers.IO).launch {
             val app = context.applicationContext as MedNutriTrackApp
+            val prefs = PreferenceManager(context)
             val now = System.currentTimeMillis()
             val log = MedicineLog(
-                medicineId = medicineId.toInt(),
+                userId = prefs.userId,
+                medicineId = medicineId,
                 scheduledTime = now,
-                takenTime = if (status == Status.TAKEN) now else null,
+                actualTime = if (status == MedicineStatus.TAKEN) now else null,
                 status = status
             )
-            app.database.medicineDao().insert(log)
+            app.database.medicineLogDao().insert(log)
         }
         
-        val message = if (status == Status.TAKEN) "Marked as taken" else "Skipped"
+        val message = if (status == MedicineStatus.TAKEN) "Marked as taken" else "Skipped"
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 }

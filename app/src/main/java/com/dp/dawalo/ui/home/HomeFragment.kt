@@ -27,8 +27,20 @@ class HomeFragment : Fragment() {
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        prefs = PreferenceManager(requireContext())
-        loadUserData()
+        try {
+            prefs = PreferenceManager(requireContext())
+            
+            if (!prefs.isLoggedIn()) {
+                android.widget.Toast.makeText(requireContext(), "Please login first", android.widget.Toast.LENGTH_SHORT).show()
+                requireActivity().finish()
+                return
+            }
+            
+            loadUserData()
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(requireContext(), "Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            android.util.Log.e("HomeFragment", "Error in onViewCreated", e)
+        }
     }
     
     private fun loadUserData() {

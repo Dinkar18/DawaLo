@@ -23,6 +23,14 @@ class PreferenceManager(context: Context) {
         get() = prefs.getString("jwt_token", null)
         set(value) = prefs.edit().putString("jwt_token", value).apply()
     
+    var isSimplifiedMode: Boolean
+        get() = prefs.getBoolean("simplified_mode", false)
+        set(value) = prefs.edit().putBoolean("simplified_mode", value).apply()
+    
+    var isVoiceGuidanceEnabled: Boolean
+        get() = prefs.getBoolean("voice_guidance", false)
+        set(value) = prefs.edit().putBoolean("voice_guidance", value).apply()
+    
     fun isLoggedIn(): Boolean = token != null && userId != -1L
     
     fun logout() {

@@ -10,6 +10,8 @@ import com.dp.dawalo.data.remote.api.*
 import com.dp.dawalo.utils.PreferenceManager
 
 object RetrofitClient {
+    // Using localhost with adb reverse port forwarding
+    // Run: adb reverse tcp:8080 tcp:8080
     private const val BASE_URL = "http://localhost:8080/"
     private const val TAG = "RetrofitClient"
     
@@ -42,6 +44,9 @@ object RetrofitClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
+            .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)  // Fast fail
+            .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
             .build()
     }
 

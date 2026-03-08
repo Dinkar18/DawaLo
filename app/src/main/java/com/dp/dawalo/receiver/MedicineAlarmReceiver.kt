@@ -20,15 +20,24 @@ class MedicineAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val medicineId = intent.getLongExtra("medicine_id", -1L)
         val medicineName = intent.getStringExtra("medicine_name") ?: "Medicine"
+        val dosage = intent.getStringExtra("dosage") ?: ""
+        val scheduledTime = intent.getLongExtra("scheduled_time", System.currentTimeMillis())
         
         android.util.Log.d("MedicineAlarmReceiver", "Alarm received for: $medicineName (ID: $medicineId)")
+        
+        // Launch full-screen alarm activity
+        val alarmIntent = Intent(context, com.dp.dawalo.ui.alarm.MedicineAlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("medicine_id", medicineId)
+            putExtra("medicine_name", medicineName)
+            putExtra("dosage", dosage)
+            putExtra("scheduled_time", scheduledTime)
+        }
+        context.startActivity(alarmIntent)
         
         // Get language preference
         val prefs = PreferenceManager(context)
         val languageCode = prefs.languageCode
-        
-        // Show notification with actions
-        showNotification(context, medicineId, medicineName)
         
         // Start continuous voice alert service
         val serviceIntent = Intent(context, VoiceAlertService::class.java).apply {
@@ -46,6 +55,9 @@ class MedicineAlarmReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             android.util.Log.e("MedicineAlarmReceiver", "Error starting service: ${e.message}", e)
         }
+        
+        // Also show notification as backup
+        showNotification(context, medicineId, medicineName)
         
         // Reschedule for next day (recurring alarm)
         val nextDayMillis = System.currentTimeMillis() + (24 * 60 * 60 * 1000)

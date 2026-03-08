@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:padding="24dp">
+
+    <!-- Icon -->
+    <TextView
+        android:id="@+id/ivMedicineIcon"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:text="💊"
+        android:textSize="80sp"
+        android:gravity="center"
+        android:contentDescription="Medicine icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="48dp"/>
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time to Take Your Medicine"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/ivMedicineIcon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="32dp"/>
+
+    <!-- Medicine Name -->
+    <TextView
+        android:id="@+id/tvMedicineName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Vitamin D"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <!-- Dosage -->
+    <TextView
+        android:id="@+id/tvDosage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1 tablet"
+        android:textSize="20sp"
+        android:textColor="@color/gray"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/tvMedicineName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Time -->
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scheduled: 9:00 AM"
+        android:textSize="16sp"
+        android:textColor="@color/gray"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/tvDosage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Action Buttons Container -->
+    <LinearLayout
+        android:id="@+id/llButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="48dp">
+
+        <!-- Taken Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTaken"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:text="✅ I've Taken It"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/success"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Snooze Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSnooze"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="⏰ Snooze (10 min)"
+            android:textSize="18sp"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/warning"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Skip Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSkip"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="❌ Skip This Dose"
+            android:textSize="18sp"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/error"
+            android:textColor="@color/white"
+            style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

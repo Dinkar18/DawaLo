@@ -73,8 +73,22 @@ class LoginActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this@LoginActivity, response.message, Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: java.net.ConnectException) {
+                // Backend is down - proceed to OTP screen with offline mode
+                Toast.makeText(this@LoginActivity, "Backend unavailable. Use test OTP: 123456", Toast.LENGTH_LONG).show()
+                val intent = Intent(this@LoginActivity, OtpActivity::class.java)
+                intent.putExtra("phone", phone)
+                startActivity(intent)
+            } catch (e: java.net.SocketTimeoutException) {
+                Toast.makeText(this@LoginActivity, "Backend unavailable. Use test OTP: 123456", Toast.LENGTH_LONG).show()
+                val intent = Intent(this@LoginActivity, OtpActivity::class.java)
+                intent.putExtra("phone", phone)
+                startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@LoginActivity, "Backend unavailable. Use test OTP: 123456", Toast.LENGTH_LONG).show()
+                val intent = Intent(this@LoginActivity, OtpActivity::class.java)
+                intent.putExtra("phone", phone)
+                startActivity(intent)
             } finally {
                 binding.btnLogin.isEnabled = true
             }

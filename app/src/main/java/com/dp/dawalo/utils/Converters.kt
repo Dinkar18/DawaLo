@@ -2,6 +2,8 @@ package com.dp.dawalo.utils
 
 import androidx.room.TypeConverter
 import com.dp.dawalo.data.local.entity.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class Converters {
     @TypeConverter
@@ -11,10 +13,10 @@ class Converters {
     fun toGoal(value: String): Goal = Goal.valueOf(value)
     
     @TypeConverter
-    fun fromStatus(value: Status): String = value.name
+    fun fromMedicineStatus(value: MedicineStatus): String = value.name
     
     @TypeConverter
-    fun toStatus(value: String): Status = Status.valueOf(value)
+    fun toMedicineStatus(value: String): MedicineStatus = MedicineStatus.valueOf(value)
     
     @TypeConverter
     fun fromProteinStatus(value: ProteinStatus): String = value.name
@@ -39,4 +41,15 @@ class Converters {
     
     @TypeConverter
     fun toActivityLevel(value: String): ActivityLevel = ActivityLevel.valueOf(value)
+    
+    @TypeConverter
+    fun fromStringList(value: List<String>): String {
+        return Gson().toJson(value)
+    }
+    
+    @TypeConverter
+    fun toStringList(value: String): List<String> {
+        val listType = object : TypeToken<List<String>>() {}.type
+        return Gson().fromJson(value, listType)
+    }
 }

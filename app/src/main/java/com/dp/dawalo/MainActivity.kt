@@ -58,12 +58,16 @@ class MainActivity : AppCompatActivity() {
                     loadFragment(MedicineFragment())
                     true
                 }
-                R.id.nav_nutrition -> {
-                    loadFragment(NutritionFragment())
+                R.id.nav_family -> {
+                    loadFragment(com.dp.dawalo.ui.family.FamilyFragment())
                     true
                 }
-                R.id.nav_profile -> {
-                    loadFragment(ProfileFragment())
+                R.id.nav_adherence -> {
+                    loadFragment(com.dp.dawalo.ui.adherence.AdherenceFragment())
+                    true
+                }
+                R.id.nav_settings -> {
+                    loadFragment(com.dp.dawalo.ui.settings.SettingsFragment())
                     true
                 }
                 else -> false
@@ -72,19 +76,37 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        try {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error loading screen: ${e.message}", Toast.LENGTH_SHORT).show()
+            android.util.Log.e("MainActivity", "Error loading fragment", e)
+        }
     }
     
     private fun requestNecessaryPermissions() {
         val permissionsToRequest = mutableListOf<String>()
         
+        // Notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
                 != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+        
+        // Microphone permission for voice input
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+        
+        // SMS permission for family notifications
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) 
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.SEND_SMS)
         }
         
         if (permissionsToRequest.isNotEmpty()) {
@@ -95,6 +117,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
         
+        // Exact alarm permission (Android 12+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(android.app.AlarmManager::class.java)
             if (!alarmManager.canScheduleExactAlarms()) {

@@ -30,7 +30,11 @@ class MedicineAdapter(
             binding.tvMedicineName.text = medicine.name
             binding.tvDosage.text = "Dosage: ${medicine.dosage}"
             
-            val times: List<String> = Gson().fromJson(medicine.times, object : TypeToken<List<String>>() {}.type)
+            val times = try {
+                Gson().fromJson(medicine.times, object : TypeToken<List<String>>() {}.type)
+            } catch (e: Exception) {
+                listOf(medicine.times)
+            }
             binding.tvTimes.text = "Times: ${times.joinToString(", ")}"
             
             binding.btnDelete.setOnClickListener {

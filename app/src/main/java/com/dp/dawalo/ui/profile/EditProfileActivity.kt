@@ -11,6 +11,7 @@ import com.dp.dawalo.databinding.ActivityEditProfileBinding
 import com.dp.dawalo.data.local.entity.User
 import com.dp.dawalo.data.local.entity.Goal
 import com.dp.dawalo.data.local.entity.ActivityLevel
+import com.dp.dawalo.sync.SyncManager
 import com.dp.dawalo.utils.PreferenceManager
 import com.dp.dawalo.utils.ProteinCalculator
 import kotlinx.coroutines.launch
@@ -90,11 +91,15 @@ class EditProfileActivity : AppCompatActivity() {
                     goal = goal,
                     activityLevel = activityLevel,
                     dailyProteinTarget = proteinTarget,
-                    dailyCalorieTarget = calorieTarget
+                    dailyCalorieTarget = calorieTarget,
+                    isSynced = false
                 )
                 
                 val app = application as MedNutriTrackApp
                 app.database.userDao().update(updatedUser)
+                
+                // Async sync to backend
+                SyncManager(this@EditProfileActivity).syncAll()
                 
                 Toast.makeText(this@EditProfileActivity, "Profile updated!", Toast.LENGTH_SHORT).show()
                 finish()

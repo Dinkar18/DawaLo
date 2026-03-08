@@ -28,6 +28,9 @@ class MedNutriTrackApp : Application() {
         
         // Schedule periodic background sync
         schedulePeriodicSync()
+        
+        // Schedule missed medicine checker
+        com.dp.dawalo.worker.MissedMedicineChecker.schedule(this)
     }
     
     private fun schedulePeriodicSync() {

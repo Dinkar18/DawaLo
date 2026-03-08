@@ -41,16 +41,37 @@ class MedicineFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        prefs = PreferenceManager(requireContext())
-        val app = requireActivity().application as MedNutriTrackApp
-        val repository = MedicineRepository(app.database.medicineDao())
-        viewModel = ViewModelProvider(this, MedicineViewModelFactory(repository))[MedicineViewModel::class.java]
-        
-        setupRecyclerView()
-        observeMedicines()
-        
-        binding.fabAdd.setOnClickListener {
-            showAddMedicineDialog()
+        try {
+            prefs = PreferenceManager(requireContext())
+            
+            // Check if user is logged in
+            if (!prefs.isLoggedIn()) {
+                Toast.makeText(requireContext(), "Please login first", Toast.LENGTH_SHORT).show()
+                android.util.Log.e("MedicineFragment", "User not logged in. UserId: ${prefs.userId}, Token: ${prefs.token}")
+                requireActivity().finish()
+                return
+            }
+            
+            android.util.Log.d("MedicineFragment", "User logged in. UserId: ${prefs.userId}")
+            
+            val app = requireActivity().application as MedNutriTrackApp
+            val repository = MedicineRepository(app.database.medicineDao(), prefs)
+            viewModel = ViewModelProvider(this, MedicineViewModelFactory(repository))[MedicineViewModel::class.java]
+            
+            setupRecyclerView()
+            observeMedicines()
+            
+            binding.fabAdd.setOnClickListener {
+                showAddMedicineDialog()
+            }
+            
+            binding.fabVoiceAdd.setOnClickListener {
+                val intent = android.content.Intent(requireContext(), com.dp.dawalo.ui.voice.VoiceInputActivity::class.java)
+                startActivity(intent)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            android.util.Log.e("MedicineFragment", "Error in onViewCreated", e)
         }
     }
     
@@ -65,9 +86,16 @@ class MedicineFragment : Fragment() {
     }
     
     private fun observeMedicines() {
-        viewModel.getAllMedicines(prefs.userId).observe(viewLifecycleOwner) { medicines ->
-            adapter.submitList(medicines)
-            binding.tvEmptyState.visibility = if (medicines.isEmpty()) View.VISIBLE else View.GONE
+        try {
+            viewModel.getAllMedicines(prefs.userId).observe(viewLifecycleOwner) { medicines ->
+                if (medicines != null) {
+                    adapter.submitList(medicines)
+                    binding.tvEmptyState.visibility = if (medicines.isEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error loading medicines: ${e.message}", Toast.LENGTH_SHORT).show()
+            android.util.Log.e("MedicineFragment", "Error observing medicines", e)
         }
     }
     

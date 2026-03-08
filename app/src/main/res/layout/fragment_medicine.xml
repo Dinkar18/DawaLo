@@ -37,6 +37,17 @@
 
     </LinearLayout>
 
+    <!-- Voice Add Button -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabVoiceAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="16dp"
+        android:text="🎤 Voice"
+        android:contentDescription="Add by Voice"
+        app:icon="@android:drawable/ic_btn_speak_now"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAdd"
         android:layout_width="wrap_content"

@@ -17,8 +17,9 @@ data class User(
     val dietType: DietType = DietType.VEGETARIAN,
     val dailyProteinTarget: Float,
     val dailyCalorieTarget: Float = 2000f,
-    val languageCode: String = "hi", // Default to Hindi for India
-    val activityLevel: ActivityLevel = ActivityLevel.MODERATELY_ACTIVE
+    val languageCode: String = "hi",
+    val activityLevel: ActivityLevel = ActivityLevel.MODERATELY_ACTIVE,
+    val isSynced: Boolean = false
 )
 
 enum class Goal {
@@ -34,9 +35,9 @@ enum class DietType {
 }
 
 enum class ActivityLevel {
-    SEDENTARY, 
-    LIGHTLY_ACTIVE, 
-    MODERATELY_ACTIVE, 
-    VERY_ACTIVE, 
+    SEDENTARY,
+    LIGHTLY_ACTIVE,
+    MODERATELY_ACTIVE,
+    VERY_ACTIVE,
     EXTREMELY_ACTIVE
 }

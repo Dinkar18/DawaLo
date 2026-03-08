@@ -14,18 +14,21 @@ import com.dp.dawalo.utils.Converters
         User::class,
         Medicine::class,
         MedicineLog::class,
+        FamilyMember::class,
         FoodItem::class,
         DailyFoodLog::class,
         ProteinSummary::class,
         WaterLog::class
     ],
-    version = 6,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun medicineDao(): MedicineDao
+    abstract fun medicineLogDao(): MedicineLogDao
+    abstract fun familyMemberDao(): FamilyMemberDao
     abstract fun foodItemDao(): FoodItemDao
     abstract fun dailyFoodLogDao(): DailyFoodLogDao
     abstract fun waterLogDao(): WaterLogDao
