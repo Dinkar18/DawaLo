@@ -1,5 +1,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.DawaLo" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary_green</item>
         <item name="colorPrimaryVariant">@color/primary_green_dark</item>
@@ -7,9 +6,21 @@
         <item name="colorSecondary">@color/primary_green_light</item>
         <item name="colorSecondaryVariant">@color/primary_green</item>
         <item name="colorOnSecondary">@color/white</item>
-        <item name="android:statusBarColor">@color/primary_green</item>
+        <item name="colorSurface">@color/card_background</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/primary_green_dark</item>
         <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <style name="Theme.DawaLo" parent="Base.Theme.DawaLo" />
+
+    <!-- Splash screen theme (no action bar, full screen green) -->
+    <style name="Theme.DawaLo.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/primary_green_dark</item>
+        <item name="android:statusBarColor">@color/primary_green_dark</item>
+        <item name="android:navigationBarColor">@color/primary_green_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

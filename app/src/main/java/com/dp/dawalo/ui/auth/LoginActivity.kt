@@ -1,11 +1,13 @@
 package com.dp.dawalo.ui.auth
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.airbnb.lottie.FontAssetDelegate
 import com.dp.dawalo.MainActivity
 import com.dp.dawalo.MedNutriTrackApp
 import com.dp.dawalo.data.remote.RetrofitClient
@@ -21,6 +23,11 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.lottieLogin.setFontAssetDelegate(object : FontAssetDelegate() {
+            override fun getFontPath(fontFamily: String?): String? = null
+            override fun fetchFont(fontFamily: String?): Typeface = Typeface.DEFAULT
+        })
 
         preferenceManager = PreferenceManager(this)
 

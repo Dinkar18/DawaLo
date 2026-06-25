@@ -75,11 +75,11 @@ dependencies {
     // Charts
     implementation(libs.mpandroidchart)
     
-    // Material Icons
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
-    
     // Shimmer
     implementation("com.facebook.shimmer:shimmer:0.5.0")
+    
+    // Lottie animations
+    implementation("com.airbnb.android:lottie:6.4.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

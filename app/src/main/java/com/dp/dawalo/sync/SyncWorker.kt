@@ -4,6 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class SyncWorker(
     context: Context,
@@ -23,7 +26,7 @@ class SyncWorker(
             
             if (!syncManager.isOnline()) {
                 Log.d(TAG, "Device offline, skipping sync")
-                return Result.retry()
+                return Result.success() // Don't retry when offline — WorkManager will run again on schedule
             }
             
             syncManager.syncFoodLogs()
@@ -33,7 +36,12 @@ class SyncWorker(
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Background sync failed: ${e.message}", e)
-            Result.retry()
+            // Only retry on transient network errors
+            when (e) {
+                is ConnectException, is SocketTimeoutException, is UnknownHostException ->
+                    Result.retry()
+                else -> Result.success() // Don't retry permanent failures
+            }
         }
     }
 }

@@ -9,65 +9,74 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dp.dawalo.MainActivity
 import com.dp.dawalo.R
 import com.dp.dawalo.service.VoiceAlertService
+import com.dp.dawalo.utils.AlarmScheduler
 import com.dp.dawalo.utils.PreferenceManager
+import java.util.*
 
 class MedicineAlarmReceiver : BroadcastReceiver() {
+    
+    companion object {
+        private const val TAG = "MedicineAlarmReceiver"
+        private const val CHANNEL_ID = "medicine_reminder_channel"
+    }
     
     override fun onReceive(context: Context, intent: Intent) {
         val medicineId = intent.getLongExtra("medicine_id", -1L)
         val medicineName = intent.getStringExtra("medicine_name") ?: "Medicine"
         val dosage = intent.getStringExtra("dosage") ?: ""
         val scheduledTime = intent.getLongExtra("scheduled_time", System.currentTimeMillis())
+        val timeIndex = intent.getIntExtra("time_index", 0)
         
-        android.util.Log.d("MedicineAlarmReceiver", "Alarm received for: $medicineName (ID: $medicineId)")
-        
-        // Launch full-screen alarm activity
-        val alarmIntent = Intent(context, com.dp.dawalo.ui.alarm.MedicineAlarmActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("medicine_id", medicineId)
-            putExtra("medicine_name", medicineName)
-            putExtra("dosage", dosage)
-            putExtra("scheduled_time", scheduledTime)
-        }
-        context.startActivity(alarmIntent)
+        Log.d(TAG, "Alarm received for: $medicineName (ID: $medicineId, timeIndex: $timeIndex)")
         
         // Get language preference
         val prefs = PreferenceManager(context)
         val languageCode = prefs.languageCode
         
-        // Start continuous voice alert service
+        // Start voice alert service (alarm sound + TTS)
         val serviceIntent = Intent(context, VoiceAlertService::class.java).apply {
             putExtra("medicine_name", medicineName)
             putExtra("language_code", languageCode)
         }
-        
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
             } else {
                 context.startService(serviceIntent)
             }
-            android.util.Log.d("MedicineAlarmReceiver", "Voice alert service started")
         } catch (e: Exception) {
-            android.util.Log.e("MedicineAlarmReceiver", "Error starting service: ${e.message}", e)
+            Log.e(TAG, "Error starting voice service: ${e.message}", e)
         }
         
-        // Also show notification as backup
-        showNotification(context, medicineId, medicineName)
+        // Show full-screen notification (this is the correct way to show alarm UI on Android 10+)
+        showFullScreenNotification(context, medicineId, medicineName, dosage, scheduledTime)
         
-        // Reschedule for next day (recurring alarm)
-        val nextDayMillis = System.currentTimeMillis() + (24 * 60 * 60 * 1000)
-        com.dp.dawalo.utils.AlarmScheduler.scheduleMedicineAlarm(context, medicineId, medicineName, nextDayMillis)
+        // Reschedule for next day using ORIGINAL scheduled time + 24h (prevents drift)
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = scheduledTime
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+        AlarmScheduler.scheduleMedicineAlarm(
+            context, medicineId, medicineName,
+            calendar.timeInMillis, timeIndex
+        )
     }
     
-    private fun showNotification(context: Context, medicineId: Long, medicineName: String) {
+    private fun showFullScreenNotification(
+        context: Context,
+        medicineId: Long,
+        medicineName: String,
+        dosage: String,
+        scheduledTime: Long
+    ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
-        // Create notification channel for Android O+
+        // Create high-importance channel for alarm
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -76,37 +85,28 @@ class MedicineAlarmReceiver : BroadcastReceiver() {
             ).apply {
                 description = "Notifications for medicine reminders"
                 enableVibration(true)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
+                // No sound on notification channel — VoiceAlertService handles audio
+                setSound(null, null)
             }
             notificationManager.createNotificationChannel(channel)
         }
         
-        val openIntent = Intent(context, MainActivity::class.java)
-        val openPendingIntent = PendingIntent.getActivity(
+        // Full-screen intent → launches MedicineAlarmActivity
+        val fullScreenIntent = Intent(context, com.dp.dawalo.ui.alarm.MedicineAlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("medicine_id", medicineId)
+            putExtra("medicine_name", medicineName)
+            putExtra("dosage", dosage)
+            putExtra("scheduled_time", scheduledTime)
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
             medicineId.toInt(),
-            openIntent,
+            fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Stop action
-        val stopIntent = Intent(context, VoiceAlertService::class.java).apply {
-            action = VoiceAlertService.ACTION_STOP
-        }
-        val stopPendingIntent = PendingIntent.getService(
-            context,
-            (medicineId + 1000).toInt(),
-            stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
-        // Mark as Taken action
+        // Taken action
         val takenIntent = Intent(context, MedicineActionReceiver::class.java).apply {
             action = "ACTION_TAKEN"
             putExtra("medicine_id", medicineId)
@@ -138,18 +138,14 @@ class MedicineAlarmReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(false)
             .setOngoing(true)
-            .addAction(R.drawable.ic_launcher_foreground, "Taken", takenPendingIntent)
-            .addAction(R.drawable.ic_launcher_foreground, "Skip", skipPendingIntent)
-            .setContentIntent(openPendingIntent)
-            .addAction(R.drawable.ic_launcher_foreground, "STOP ALERT", stopPendingIntent)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .setVibrate(longArrayOf(0, 1000, 500, 1000))
+            // Full-screen intent — shows alarm activity on lock screen & when app is in background
+            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .addAction(R.drawable.ic_launcher_foreground, "✅ Taken", takenPendingIntent)
+            .addAction(R.drawable.ic_launcher_foreground, "❌ Skip", skipPendingIntent)
+            .setContentIntent(fullScreenPendingIntent)
             .build()
         
         notificationManager.notify(medicineId.toInt(), notification)
-    }
-    
-    companion object {
-        private const val CHANNEL_ID = "medicine_reminder_channel"
     }
 }

@@ -1,8 +1,11 @@
 package com.dp.dawalo.ui.alarm
 
+import android.app.NotificationManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.dp.dawalo.data.local.AppDatabase
@@ -27,17 +30,26 @@ class MedicineAlarmActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         // Show on lock screen
-        window.addFlags(
-            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
         binding = ActivityMedicineAlarmBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        // Get data from intent
+        // Prevent back button
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() { /* blocked */ }
+        })
+        
         medicineId = intent.getLongExtra("medicine_id", -1L)
         medicineName = intent.getStringExtra("medicine_name") ?: "Medicine"
         dosage = intent.getStringExtra("dosage") ?: ""
@@ -50,7 +62,6 @@ class MedicineAlarmActivity : AppCompatActivity() {
     private fun setupUI() {
         binding.tvMedicineName.text = medicineName
         binding.tvDosage.text = dosage
-        
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
         binding.tvTime.text = "Scheduled: ${timeFormat.format(Date(scheduledTime))}"
     }
@@ -58,62 +69,64 @@ class MedicineAlarmActivity : AppCompatActivity() {
     private fun setupButtons() {
         binding.btnTaken.setOnClickListener {
             logMedicine(MedicineStatus.TAKEN)
-            stopAlarmAndFinish()
+            dismissAll()
         }
         
         binding.btnSnooze.setOnClickListener {
             logMedicine(MedicineStatus.SNOOZED)
-            snoozeAlarm()
-            finish()
+            // Schedule snooze alarm
+            val snoozeTime = System.currentTimeMillis() + (10 * 60 * 1000)
+            com.dp.dawalo.utils.AlarmScheduler.scheduleMedicineAlarm(
+                this, medicineId, medicineName, snoozeTime
+            )
+            dismissAll()
         }
         
         binding.btnSkip.setOnClickListener {
             logMedicine(MedicineStatus.SKIPPED)
-            stopAlarmAndFinish()
+            dismissAll()
         }
     }
     
     private fun logMedicine(status: MedicineStatus) {
         lifecycleScope.launch {
-            val database = AppDatabase.getDatabase(applicationContext)
-            val prefs = PreferenceManager(applicationContext)
-            val log = MedicineLog(
-                userId = prefs.userId,
-                medicineId = medicineId,
-                scheduledTime = scheduledTime,
-                actualTime = if (status == MedicineStatus.TAKEN) System.currentTimeMillis() else null,
-                status = status,
-                notes = null
-            )
-            database.medicineLogDao().insert(log)
+            try {
+                val database = AppDatabase.getDatabase(applicationContext)
+                val prefs = PreferenceManager(applicationContext)
+                val log = MedicineLog(
+                    userId = prefs.userId,
+                    medicineId = medicineId,
+                    scheduledTime = scheduledTime,
+                    actualTime = if (status == MedicineStatus.TAKEN) System.currentTimeMillis() else null,
+                    status = status,
+                    notes = null
+                )
+                database.medicineLogDao().insert(log)
+            } catch (e: Exception) {
+                android.util.Log.e("MedicineAlarmActivity", "Error logging: ${e.message}")
+            }
         }
     }
     
-    private fun snoozeAlarm() {
-        // Reschedule alarm for 10 minutes later
-        val snoozeTime = System.currentTimeMillis() + (10 * 60 * 1000)
-        com.dp.dawalo.utils.AlarmScheduler.scheduleMedicineAlarm(
-            this,
-            medicineId,
-            medicineName,
-            snoozeTime
-        )
-    }
-    
-    private fun stopAlarmAndFinish() {
-        // Stop voice alert service with correct action
-        val serviceIntent = Intent(this, VoiceAlertService::class.java).apply {
-            action = "com.dp.dawalo.ACTION_STOP_ALERT"
+    /**
+     * Stop voice alert service + dismiss notification + finish activity
+     */
+    private fun dismissAll() {
+        // 1. Stop voice alert service
+        try {
+            val serviceIntent = Intent(this, VoiceAlertService::class.java).apply {
+                action = VoiceAlertService.ACTION_STOP
+            }
+            startService(serviceIntent)
+        } catch (e: Exception) {
+            android.util.Log.e("MedicineAlarmActivity", "Error stopping service: ${e.message}")
         }
-        startService(serviceIntent)
         
-        // Also stop the service completely
-        stopService(Intent(this, com.dp.dawalo.service.VoiceAlertService::class.java))
+        // 2. Cancel the alarm notification
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(medicineId.toInt())
         
+        // 3. Close activity
         finish()
-    }
-    
-    override fun onBackPressed() {
-        // Prevent back button - force user to take action
     }
 }

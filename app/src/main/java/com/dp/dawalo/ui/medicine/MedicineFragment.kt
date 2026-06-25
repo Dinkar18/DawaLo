@@ -44,15 +44,11 @@ class MedicineFragment : Fragment() {
         try {
             prefs = PreferenceManager(requireContext())
             
-            // Check if user is logged in
             if (!prefs.isLoggedIn()) {
                 Toast.makeText(requireContext(), "Please login first", Toast.LENGTH_SHORT).show()
-                android.util.Log.e("MedicineFragment", "User not logged in. UserId: ${prefs.userId}, Token: ${prefs.token}")
                 requireActivity().finish()
                 return
             }
-            
-            android.util.Log.d("MedicineFragment", "User logged in. UserId: ${prefs.userId}")
             
             val app = requireActivity().application as MedNutriTrackApp
             val repository = MedicineRepository(app.database.medicineDao(), prefs)
@@ -77,7 +73,8 @@ class MedicineFragment : Fragment() {
     
     private fun setupRecyclerView() {
         adapter = MedicineAdapter { medicine ->
-            AlarmScheduler.cancelMedicineAlarm(requireContext(), medicine.id)
+            // Cancel all alarms for this medicine before deleting
+            AlarmScheduler.cancelAllAlarmsForMedicine(requireContext(), medicine.id)
             viewModel.deleteMedicine(medicine)
         }
         
@@ -95,7 +92,6 @@ class MedicineFragment : Fragment() {
             }
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error loading medicines: ${e.message}", Toast.LENGTH_SHORT).show()
-            android.util.Log.e("MedicineFragment", "Error observing medicines", e)
         }
     }
     
@@ -121,15 +117,15 @@ class MedicineFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Add Medicine")
             .setView(dialogView)
-            .setPositiveButton("Save") { dialog, which ->
-                val name = etName.text.toString()
-                val dosage = etDosage.text.toString()
-                val frequency = etFrequency.text.toString()
+            .setPositiveButton("Save") { _, _ ->
+                val name = etName.text.toString().trim()
+                val dosage = etDosage.text.toString().trim()
+                val frequency = etFrequency.text.toString().trim()
                 
                 if (name.isNotEmpty() && dosage.isNotEmpty() && selectedTimes.isNotEmpty()) {
                     saveMedicine(name, dosage, frequency, selectedTimes)
                 } else {
-                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Please fill all fields and add at least one time", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -154,7 +150,7 @@ class MedicineFragment : Fragment() {
     }
     
     private fun scheduleAlarms(medicineId: Long, medicineName: String, times: List<String>) {
-        times.forEach { time ->
+        times.forEachIndexed { index, time ->
             val parts = time.split(":")
             val hour = parts[0].toInt()
             val minute = parts[1].toInt()
@@ -163,8 +159,9 @@ class MedicineFragment : Fragment() {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
                 
-                if (timeInMillis < System.currentTimeMillis()) {
+                if (timeInMillis <= System.currentTimeMillis()) {
                     add(Calendar.DAY_OF_MONTH, 1)
                 }
             }
@@ -173,7 +170,8 @@ class MedicineFragment : Fragment() {
                 requireContext(),
                 medicineId,
                 medicineName,
-                calendar.timeInMillis
+                calendar.timeInMillis,
+                index
             )
         }
     }

@@ -4,6 +4,8 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import com.dp.dawalo.MedNutriTrackApp
 import com.dp.dawalo.data.local.entity.MedicineLog
@@ -20,38 +22,62 @@ class MedicineActionReceiver : BroadcastReceiver() {
         val medicineId = intent.getLongExtra("medicine_id", -1L)
         val action = intent.action
         
+        val pendingResult = goAsync()
+        
         when (action) {
-            "ACTION_TAKEN" -> logMedicine(context, medicineId, MedicineStatus.TAKEN)
-            "ACTION_SKIP" -> logMedicine(context, medicineId, MedicineStatus.SKIPPED)
+            "ACTION_TAKEN" -> logMedicine(context, medicineId, MedicineStatus.TAKEN, pendingResult)
+            "ACTION_SKIP" -> logMedicine(context, medicineId, MedicineStatus.SKIPPED, pendingResult)
+            else -> pendingResult.finish()
         }
         
-        // Stop voice alert
-        val stopIntent = Intent(context, VoiceAlertService::class.java).apply {
-            this.action = VoiceAlertService.ACTION_STOP
+        // Stop voice alert service
+        try {
+            val stopIntent = Intent(context, VoiceAlertService::class.java).apply {
+                this.action = VoiceAlertService.ACTION_STOP
+            }
+            context.startService(stopIntent)
+        } catch (e: Exception) {
+            // If service not running, just ignore
+            android.util.Log.e("MedicineActionReceiver", "Error stopping service: ${e.message}")
         }
-        context.startService(stopIntent)
         
         // Cancel notification
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(medicineId.toInt())
+        
+        // Also close the alarm activity if it's open
+        // Send a broadcast that the alarm activity can listen for, or just rely on the service stopping
     }
     
-    private fun logMedicine(context: Context, medicineId: Long, status: MedicineStatus) {
+    private fun logMedicine(
+        context: Context,
+        medicineId: Long,
+        status: MedicineStatus,
+        pendingResult: PendingResult
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
-            val app = context.applicationContext as MedNutriTrackApp
-            val prefs = PreferenceManager(context)
-            val now = System.currentTimeMillis()
-            val log = MedicineLog(
-                userId = prefs.userId,
-                medicineId = medicineId,
-                scheduledTime = now,
-                actualTime = if (status == MedicineStatus.TAKEN) now else null,
-                status = status
-            )
-            app.database.medicineLogDao().insert(log)
+            try {
+                val app = context.applicationContext as MedNutriTrackApp
+                val prefs = PreferenceManager(context)
+                val now = System.currentTimeMillis()
+                val log = MedicineLog(
+                    userId = prefs.userId,
+                    medicineId = medicineId,
+                    scheduledTime = now,
+                    actualTime = if (status == MedicineStatus.TAKEN) now else null,
+                    status = status
+                )
+                app.database.medicineLogDao().insert(log)
+            } catch (e: Exception) {
+                android.util.Log.e("MedicineActionReceiver", "Error logging medicine: ${e.message}")
+            } finally {
+                pendingResult.finish()
+            }
         }
         
-        val message = if (status == MedicineStatus.TAKEN) "Marked as taken" else "Skipped"
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        val message = if (status == MedicineStatus.TAKEN) "✅ Marked as taken" else "❌ Skipped"
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
     }
 }

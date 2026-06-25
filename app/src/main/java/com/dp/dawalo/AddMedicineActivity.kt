@@ -35,7 +35,7 @@ class AddMedicineActivity : AppCompatActivity() {
         
         prefs = PreferenceManager(this)
         val app = application as MedNutriTrackApp
-        val repository = MedicineRepository(app.database.medicineDao())
+        val repository = MedicineRepository(app.database.medicineDao(), prefs)
         viewModel = ViewModelProvider(this, MedicineViewModelFactory(repository))[MedicineViewModel::class.java]
         
         setupListeners()
@@ -85,9 +85,9 @@ class AddMedicineActivity : AppCompatActivity() {
     }
     
     private fun saveMedicine() {
-        val name = binding.etMedicineName.text.toString()
-        val dosage = binding.etDosage.text.toString()
-        val frequency = binding.etFrequency.text.toString()
+        val name = binding.etMedicineName.text.toString().trim()
+        val dosage = binding.etDosage.text.toString().trim()
+        val frequency = binding.etFrequency.text.toString().trim()
         
         if (name.isEmpty() || dosage.isEmpty() || selectedTimes.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -112,7 +112,7 @@ class AddMedicineActivity : AppCompatActivity() {
     }
     
     private fun scheduleAlarms(medicineId: Long, medicineName: String) {
-        selectedTimes.forEach { time ->
+        selectedTimes.forEachIndexed { index, time ->
             val parts = time.split(":")
             val hour = parts[0].toInt()
             val minute = parts[1].toInt()
@@ -121,8 +121,9 @@ class AddMedicineActivity : AppCompatActivity() {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
                 
-                if (timeInMillis < System.currentTimeMillis()) {
+                if (timeInMillis <= System.currentTimeMillis()) {
                     add(Calendar.DAY_OF_MONTH, 1)
                 }
             }
@@ -131,10 +132,9 @@ class AddMedicineActivity : AppCompatActivity() {
                 this,
                 medicineId,
                 medicineName,
-                calendar.timeInMillis
+                calendar.timeInMillis,
+                index
             )
         }
-        
-        Toast.makeText(this, "Alarms scheduled for ${selectedTimes.size} times", Toast.LENGTH_SHORT).show()
     }
 }

@@ -50,8 +50,7 @@ class MissedMedicineChecker(context: Context, params: WorkerParameters) : Corout
     companion object {
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<MissedMedicineChecker>(15, TimeUnit.MINUTES)
-                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-                .build()
+                .build() // No network constraint — SMS works offline
             
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 "MissedMedicineChecker",

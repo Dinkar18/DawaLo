@@ -6,9 +6,8 @@ import com.dp.dawalo.data.local.dao.MedicineDao
 import com.dp.dawalo.data.local.entity.Medicine
 import com.dp.dawalo.data.remote.RetrofitClient
 import com.dp.dawalo.utils.PreferenceManager
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MedicineRepository(
     private val medicineDao: MedicineDao,
@@ -24,17 +23,17 @@ class MedicineRepository(
     }
     
     suspend fun insert(medicine: Medicine): Long {
-        // 1. Save to local DB first (instant)
+        // Save to local DB first (instant)
         val localId = medicineDao.insert(medicine)
         
-        // 2. Sync to backend in background
+        // Try to sync to backend (non-blocking, errors are swallowed)
         prefs?.let { syncToBackend(medicine.copy(id = localId)) }
         
         return localId
     }
     
-    private fun syncToBackend(medicine: Medicine) {
-        CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun syncToBackend(medicine: Medicine) {
+        withContext(Dispatchers.IO) {
             try {
                 prefs?.let {
                     val api = RetrofitClient.getMedicineApi(it)
@@ -61,7 +60,7 @@ class MedicineRepository(
         
         // Try to delete from backend
         prefs?.let {
-            CoroutineScope(Dispatchers.IO).launch {
+            withContext(Dispatchers.IO) {
                 try {
                     medicine.serverId?.let { serverId ->
                         val api = RetrofitClient.getMedicineApi(it)

@@ -13,6 +13,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dp.dawalo.MainActivity
 import com.dp.dawalo.R
@@ -26,6 +28,8 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
     private var medicineName: String = ""
     private var languageCode: String = "en"
     private var isRunning = false
+    private var isTtsReady = false
+    private var pendingSpeak = false
     
     private val repeatRunnable = object : Runnable {
         override fun run() {
@@ -38,16 +42,13 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
     
     override fun onCreate() {
         super.onCreate()
-        android.util.Log.d("VoiceAlertService", "Service created")
+        Log.d(TAG, "Service created")
         tts = TextToSpeech(this, this)
-        startAlarmSound()
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        android.util.Log.d("VoiceAlertService", "Service started")
-        
         if (intent?.action == ACTION_STOP) {
-            android.util.Log.d("VoiceAlertService", "Stop action received")
+            Log.d(TAG, "Stop action received")
             stopAlert()
             return START_NOT_STICKY
         }
@@ -55,30 +56,53 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
         medicineName = intent?.getStringExtra("medicine_name") ?: "Medicine"
         languageCode = intent?.getStringExtra("language_code") ?: "en"
         
-        android.util.Log.d("VoiceAlertService", "Starting alert for: $medicineName")
+        Log.d(TAG, "Starting alert for: $medicineName, lang: $languageCode")
         
         startForeground(NOTIFICATION_ID, createNotification())
+        startAlarmSound()
         
         isRunning = true
-        handler.post(repeatRunnable)
+        if (isTtsReady) {
+            setTtsLanguage()
+            handler.post(repeatRunnable)
+        } else {
+            pendingSpeak = true
+        }
         
         return START_STICKY
     }
     
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val locale = when (languageCode) {
-                "hi" -> Locale("hi", "IN")
-                "bn" -> Locale("bn", "IN")
-                "ta" -> Locale("ta", "IN")
-                else -> Locale.ENGLISH
+        isTtsReady = status == TextToSpeech.SUCCESS
+        if (isTtsReady) {
+            Log.d(TAG, "TTS initialized successfully")
+            setTtsLanguage()
+            if (pendingSpeak && isRunning) {
+                pendingSpeak = false
+                handler.post(repeatRunnable)
             }
-            tts?.language = locale
+        } else {
+            Log.e(TAG, "TTS initialization failed")
+        }
+    }
+    
+    private fun setTtsLanguage() {
+        val locale = when (languageCode) {
+            "hi" -> Locale("hi", "IN")
+            "bn" -> Locale("bn", "IN")
+            "ta" -> Locale("ta", "IN")
+            else -> Locale("en", "IN")
+        }
+        val result = tts?.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.w(TAG, "Language $languageCode not supported, falling back to English")
+            tts?.language = Locale.ENGLISH
         }
     }
     
     private fun startAlarmSound() {
         try {
+            mediaPlayer?.release()
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(applicationContext, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
                 setAudioAttributes(
@@ -92,44 +116,40 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
                 start()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error starting alarm sound: ${e.message}")
         }
     }
     
     private fun speakAlert() {
-        // Get message in selected language from resources
+        if (!isTtsReady) return
+        
         val reminderText = getString(R.string.medicine_reminder)
+        val message = "$reminderText: $medicineName"
         
-        // For Hindi, speak in pure Hindi
-        val message = if (languageCode == "hi") {
-            "$reminderText: $medicineName"
-        } else {
-            "$reminderText: $medicineName"
-        }
+        // Lower alarm volume briefly while speaking
+        try { mediaPlayer?.setVolume(0.2f, 0.2f) } catch (_: Exception) {}
         
-        android.util.Log.d("VoiceAlertService", "Speaking in language: $languageCode - Message: $message")
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                try { mediaPlayer?.setVolume(1.0f, 1.0f) } catch (_: Exception) {}
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) {
+                try { mediaPlayer?.setVolume(1.0f, 1.0f) } catch (_: Exception) {}
+            }
+        })
         
-        // Set language before speaking
-        val locale = when (languageCode) {
-            "hi" -> Locale("hi", "IN")
-            "bn" -> Locale("bn", "IN")
-            "ta" -> Locale("ta", "IN")
-            else -> Locale("en", "IN")
-        }
-        
-        tts?.language = locale
-        
-        // Wait for language to be set, then speak
-        handler.postDelayed({
-            tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, null)
-        }, 500)
+        tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "medicine_alert")
     }
     
     private fun stopAlert() {
         isRunning = false
         handler.removeCallbacks(repeatRunnable)
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
         mediaPlayer = null
         tts?.stop()
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -151,17 +171,13 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
             action = ACTION_STOP
         }
         val stopPendingIntent = PendingIntent.getService(
-            this,
-            0,
-            stopIntent,
+            this, 0, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
         val openIntent = Intent(this, MainActivity::class.java)
         val openPendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            openIntent,
+            this, 0, openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
@@ -179,16 +195,25 @@ class VoiceAlertService : Service(), TextToSpeech.OnInitListener {
     
     override fun onDestroy() {
         super.onDestroy()
-        stopAlert()
+        isRunning = false
+        handler.removeCallbacks(repeatRunnable)
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
+        mediaPlayer = null
+        tts?.stop()
         tts?.shutdown()
+        tts = null
     }
     
     override fun onBind(intent: Intent?): IBinder? = null
     
     companion object {
+        private const val TAG = "VoiceAlertService"
         const val ACTION_STOP = "com.dp.dawalo.ACTION_STOP_ALERT"
         private const val CHANNEL_ID = "voice_alert_channel"
         private const val NOTIFICATION_ID = 9999
-        private const val REPEAT_INTERVAL = 10000L // 10 seconds
+        private const val REPEAT_INTERVAL = 10000L
     }
 }

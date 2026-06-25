@@ -26,7 +26,7 @@ class NutritionFragment : Fragment() {
     private var _binding: FragmentNutritionBinding? = null
     private val binding get() = _binding!!
     
-    private lateinit var prefs: PreferenceManager
+    private val prefs: PreferenceManager by lazy { PreferenceManager(requireContext()) }
     private lateinit var adapter: FoodLogAdapter
     
     private val viewModel: NutritionViewModel by viewModels {
@@ -41,8 +41,6 @@ class NutritionFragment : Fragment() {
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        prefs = PreferenceManager(requireContext())
         setupRecyclerView()
         setupObservers()
         setupClickListeners()

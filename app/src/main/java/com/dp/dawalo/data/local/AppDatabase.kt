@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.dp.dawalo.data.local.dao.*
 import com.dp.dawalo.data.local.entity.*
 import com.dp.dawalo.utils.Converters
@@ -44,7 +46,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mednutritrack_db"
                 )
-                .fallbackToDestructiveMigration() // For development
+                // Safe: keep existing data on unknown migration instead of wiping
+                .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
                 INSTANCE = instance
                 instance

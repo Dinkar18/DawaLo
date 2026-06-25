@@ -56,10 +56,10 @@ class ProfileFragment : Fragment() {
                 binding.tvAge.text = "${it.age}"
                 binding.tvWeight.text = "${it.weight.toInt()}"
                 binding.tvHeight.text = "${it.height.toInt()}"
-                binding.tvGender.text = it.gender.name.capitalize()
-                binding.tvDietType.text = it.dietType.name.replace("_", " ").capitalize()
-                binding.tvActivityLevel.text = it.activityLevel.name.replace("_", " ").capitalize()
-                binding.tvGoal.text = it.goal.name.replace("_", " ").capitalize()
+                binding.tvGender.text = it.gender.name.replaceFirstChar { c -> c.uppercase() }
+                binding.tvDietType.text = it.dietType.name.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                binding.tvActivityLevel.text = it.activityLevel.name.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                binding.tvGoal.text = it.goal.name.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
                 binding.tvLanguage.text = it.languageCode.uppercase()
                 
                 val bmi = ProteinCalculator.calculateBMI(it.weight, it.height)
